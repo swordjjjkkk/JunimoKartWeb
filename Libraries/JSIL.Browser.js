@@ -205,26 +205,27 @@ JSIL.Browser.WarningService.prototype.write = function (text) {
   }
 };
 
-
+const targetFrameDuration = 1000 / 60; // 60 FPS = 16.666ms
+let lastTime = performance.now();
 JSIL.Browser.TickSchedulerService = function () {
-  var forceSetTimeout = false ||
-    (document.location.search.indexOf("forceSetTimeout") >= 0);
-
   var requestAnimationFrame = window.requestAnimationFrame ||
     window.mozRequestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
     window.msRequestAnimationFrame ||
     window.oRequestAnimationFrame;
 
-  if (requestAnimationFrame && !forceSetTimeout) {
-    this.schedule = function (stepCallback) {
-      requestAnimationFrame.call(window, stepCallback);
-    };
-  } else {
-    this.schedule = function (stepCallback) {
-      window.setTimeout(stepCallback, 0);
-    };
-  }
+  this.schedule = function (stepCallback) {
+    // requestAnimationFrame.call(window, stepCallback);
+    function frame(currentTime) {
+      if (currentTime - lastTime >= targetFrameDuration) {
+        lastTime += targetFrameDuration;
+        stepCallback();
+      } else {
+        requestAnimationFrame(frame);
+      }
+    }
+    requestAnimationFrame(frame);
+  };
 };
 
 
